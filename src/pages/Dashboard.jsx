@@ -16,7 +16,7 @@ import {
   SignalHigh,
   ChevronRight,
   PhoneOutgoing,
-  EyeOff,
+  ShieldCheck,
   Settings2,
 } from 'lucide-react'
 
@@ -151,23 +151,23 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Sinalização: modalidade de número A (Caller ID) em operação */}
+      {/* Sinalização: o que está em operação (modalidade de número A ou STIR/SHAKEN) */}
       <div
         className={`flex flex-wrap items-center gap-3 rounded-2xl border p-4 ${
-          modalidade.anonima
-            ? 'border-amber-200 bg-amber-50'
+          modalidade.identificada
+            ? 'border-emerald-200 bg-emerald-50'
             : 'border-brand-200 bg-brand-50/60'
         }`}
       >
         <span
           className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-            modalidade.anonima
-              ? 'bg-amber-100 text-amber-600'
+            modalidade.identificada
+              ? 'bg-emerald-600 text-white'
               : 'bg-brand-600 text-white'
           }`}
         >
-          {modalidade.anonima ? (
-            <EyeOff className="h-5 w-5" />
+          {modalidade.identificada ? (
+            <ShieldCheck className="h-5 w-5" />
           ) : (
             <PhoneOutgoing className="h-5 w-5" />
           )}
@@ -175,10 +175,10 @@ export default function Dashboard() {
         <div className="min-w-0 flex-1">
           <p
             className={`text-[11px] font-semibold uppercase tracking-wider ${
-              modalidade.anonima ? 'text-amber-600' : 'text-brand-600'
+              modalidade.identificada ? 'text-emerald-600' : 'text-brand-600'
             }`}
           >
-            Modalidade de número A (Caller ID) em operação
+            {modalidade.topLabel}
           </p>
           <p className="truncate text-base font-bold text-slate-800">
             {modalidade.label}

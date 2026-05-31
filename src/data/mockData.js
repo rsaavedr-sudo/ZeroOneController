@@ -158,8 +158,10 @@ export const configCallerIdPadrao = {
   modo: 'aleatorio_mesma_area',
   listaSelecionada: 'lista-br-sp',
   numerosManuais: '',
-  // Identificação de origem
-  ocultarOrigem: false, // false = mostrar Caller ID | true = chamada anônima
+  // Identificação de origem (STIR/SHAKEN)
+  // true  = chamada sai COM a origem verificada/atestada (rota específica)
+  // false = sem atestação de origem; usa a modalidade de número A escolhida
+  identificacaoOrigem: false,
 }
 
 // ===========================================================================

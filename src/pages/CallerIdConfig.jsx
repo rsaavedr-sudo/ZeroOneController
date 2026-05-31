@@ -5,12 +5,11 @@ import {
   Hash,
   ListOrdered,
   Pencil,
-  EyeOff,
-  Eye,
   AlertTriangle,
   Check,
   Save,
-  ShieldQuestion,
+  ShieldCheck,
+  ShieldOff,
 } from 'lucide-react'
 
 import Card, { CardHeader, CardBody } from '../components/ui/Card.jsx'
@@ -92,8 +91,9 @@ export default function CallerIdConfig() {
     return <Spinner label="Carregando configuração de Caller ID..." />
   }
 
-  // Chamada anônima é EXCLUDENTE: desativa a escolha de modalidade de número A.
-  const anonima = config.ocultarOrigem
+  // Identificação de origem (STIR/SHAKEN) é EXCLUDENTE: quando ativa, a chamada
+  // sai por uma rota com origem verificada e a modalidade de número A não se aplica.
+  const identifica = config.identificacaoOrigem
 
   return (
     <div className="space-y-6">
@@ -108,23 +108,25 @@ export default function CallerIdConfig() {
             icon={PhoneOutgoing}
           />
           <CardBody className="space-y-3">
-            {anonima && (
-              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                <EyeOff className="mt-0.5 h-4 w-4 shrink-0" />
+            {identifica && (
+              <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>
-                  Opções desativadas: a <strong>chamada anônima</strong> está
-                  ativa (rota sem identificação de origem). Desative-a na seção
-                  abaixo para escolher uma modalidade de número A.
+                  Opções desativadas: a{' '}
+                  <strong>identificação de origem (STIR/SHAKEN)</strong> está
+                  ativa. A chamada sai por uma rota com origem verificada.
+                  Desative-a na seção abaixo para escolher uma modalidade de
+                  número A.
                 </span>
               </div>
             )}
             <div
               className={
-                anonima
+                identifica
                   ? 'pointer-events-none select-none space-y-3 opacity-50'
                   : 'space-y-3'
               }
-              aria-disabled={anonima}
+              aria-disabled={identifica}
             >
             {modos.map((m) => {
               const Icon = ICONES_MODO[m.id] || Hash
@@ -143,7 +145,7 @@ export default function CallerIdConfig() {
                       name="modo-caller-id"
                       value={m.id}
                       checked={ativo}
-                      disabled={anonima}
+                      disabled={identifica}
                       onChange={() => atualizar({ modo: m.id })}
                       className="mt-1 h-4 w-4 accent-brand-600"
                     />
@@ -245,54 +247,63 @@ export default function CallerIdConfig() {
           </CardBody>
         </Card>
 
-        {/* Identificação de origem */}
+        {/* Identificação de origem (STIR/SHAKEN) */}
         <Card>
           <CardHeader
-            title="Identificação de origem"
-            subtitle="Defina se o Caller ID é exibido ou se a chamada é anônima"
-            icon={ShieldQuestion}
+            title="Identificação de origem (STIR/SHAKEN)"
+            subtitle="Ative para que a chamada saia com a origem verificada/atestada"
+            icon={ShieldCheck}
           />
           <CardBody className="space-y-4">
             <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 p-4">
               <div className="flex items-start gap-3">
                 <span
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                    config.ocultarOrigem
-                      ? 'bg-amber-50 text-amber-600'
-                      : 'bg-emerald-50 text-emerald-600'
+                    identifica
+                      ? 'bg-emerald-50 text-emerald-600'
+                      : 'bg-slate-100 text-slate-500'
                   }`}
                 >
-                  {config.ocultarOrigem ? (
-                    <EyeOff className="h-5 w-5" />
+                  {identifica ? (
+                    <ShieldCheck className="h-5 w-5" />
                   ) : (
-                    <Eye className="h-5 w-5" />
+                    <ShieldOff className="h-5 w-5" />
                   )}
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-slate-800">
-                    {config.ocultarOrigem
-                      ? 'Chamada anônima / sem identificação de origem'
-                      : 'Mostrar Caller ID'}
+                    {identifica
+                      ? 'Identificação de origem ativada'
+                      : 'Sem identificação de origem'}
                   </p>
                   <p className="mt-0.5 text-xs text-slate-500">
-                    {config.ocultarOrigem
-                      ? 'O número A não será exibido ao destinatário.'
-                      : 'O número A configurado acima será exibido ao destinatário.'}
+                    {identifica
+                      ? 'A chamada sai com a origem verificada (STIR/SHAKEN). Esta rota não usa a modalidade de número A.'
+                      : 'A chamada sai sem atestação de origem; usa a modalidade de número A configurada acima.'}
                   </p>
                 </div>
               </div>
               <Switch
-                checked={config.ocultarOrigem}
-                onChange={(v) => atualizar({ ocultarOrigem: v })}
+                checked={identifica}
+                onChange={(v) => atualizar({ identificacaoOrigem: v })}
               />
             </div>
 
-            {config.ocultarOrigem && (
+            {identifica ? (
+              <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                <p className="text-sm text-emerald-800">
+                  A chamada será originada por uma rota com identificação de
+                  origem verificada (STIR/SHAKEN), o que tende a reduzir
+                  bloqueios pelas operadoras.
+                </p>
+              </div>
+            ) : (
               <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
                 <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
                 <p className="text-sm text-amber-800">
-                  Alguns operadores podem bloquear chamadas sem identificação de
-                  origem.
+                  Chamadas sem identificação de origem podem ser bloqueadas por
+                  alguns operadores. Ative o STIR/SHAKEN para reduzir bloqueios.
                 </p>
               </div>
             )}
@@ -308,17 +319,17 @@ export default function CallerIdConfig() {
             <ResumoItem
               rotulo="Modo do número A"
               valor={
-                anonima ? (
+                identifica ? (
                   <span className="text-slate-400">Não se aplica</span>
                 ) : (
                   modos.find((m) => m.id === config.modo)?.titulo
                 )
               }
             />
-            {!anonima && config.modo === 'lista_carregada' && (
+            {!identifica && config.modo === 'lista_carregada' && (
               <ResumoItem rotulo="Lista" valor={listaSelecionada?.nome} />
             )}
-            {!anonima && config.modo === 'manual' && (
+            {!identifica && config.modo === 'manual' && (
               <ResumoItem
                 rotulo="Números válidos"
                 valor={`${validacaoManual.validos.length} número(s)`}
@@ -327,10 +338,10 @@ export default function CallerIdConfig() {
             <ResumoItem
               rotulo="Identificação de origem"
               valor={
-                config.ocultarOrigem ? (
-                  <Badge variant="amber">Anônima</Badge>
+                identifica ? (
+                  <Badge variant="green">Ativada (STIR/SHAKEN)</Badge>
                 ) : (
-                  <Badge variant="green">Caller ID visível</Badge>
+                  <Badge variant="slate">Desativada</Badge>
                 )
               }
             />

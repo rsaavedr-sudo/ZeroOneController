@@ -47,17 +47,21 @@ export function useCallerId() {
 }
 
 /**
- * descreverModalidade — resumo legível da modalidade de número A em operação.
- * Retorna { label, detalhe, anonima }.
+ * descreverModalidade — resumo legível do que está em operação.
+ * Retorna { topLabel, label, detalhe, identificada }.
+ *  - identificada=true  → identificação de origem (STIR/SHAKEN) ativa.
+ *  - identificada=false → modalidade de número A escolhida.
  */
 export function descreverModalidade(config, modos) {
-  if (!config) return { label: '—', detalhe: '', anonima: false }
+  if (!config)
+    return { topLabel: 'Caller ID', label: '—', detalhe: '', identificada: false }
 
-  if (config.ocultarOrigem) {
+  if (config.identificacaoOrigem) {
     return {
-      label: 'Chamada anônima',
-      detalhe: 'Sem identificação de origem',
-      anonima: true,
+      topLabel: 'Identificação de origem em operação',
+      label: 'Identificação de origem (STIR/SHAKEN)',
+      detalhe: 'A chamada sai com a origem verificada',
+      identificada: true,
     }
   }
 
@@ -71,5 +75,10 @@ export function descreverModalidade(config, modos) {
       .filter(Boolean).length
     detalhe = qtd ? `${qtd} número(s) manuais` : 'Configuração manual'
   }
-  return { label, detalhe, anonima: false }
+  return {
+    topLabel: 'Modalidade de número A (Caller ID) em operação',
+    label,
+    detalhe,
+    identificada: false,
+  }
 }
