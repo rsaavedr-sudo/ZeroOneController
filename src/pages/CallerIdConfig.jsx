@@ -107,16 +107,45 @@ export default function CallerIdConfig() {
             subtitle="Escolha como o Caller ID será definido (opções mutuamente exclusivas)"
             icon={PhoneOutgoing}
           />
-          <CardBody className="space-y-3">
+          <CardBody className="space-y-4">
+            {/* Switch de acionamento (excludente com STIR/SHAKEN) */}
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 p-4">
+              <div className="flex items-start gap-3">
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                    !identifica
+                      ? 'bg-brand-50 text-brand-600'
+                      : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  <PhoneOutgoing className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {!identifica
+                      ? 'Configuração de Caller ID ativada'
+                      : 'Configuração de Caller ID desativada'}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {!identifica
+                      ? 'Escolha abaixo a modalidade de número A das chamadas.'
+                      : 'Ative para definir a modalidade de número A. Exclusivo com a identificação de origem (STIR/SHAKEN).'}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={!identifica}
+                onChange={(v) => atualizar({ identificacaoOrigem: !v })}
+              />
+            </div>
+
             {identifica && (
               <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>
-                  Opções desativadas: a{' '}
+                  Modalidade desativada: a{' '}
                   <strong>identificação de origem (STIR/SHAKEN)</strong> está
                   ativa. A chamada sai por uma rota com origem verificada.
-                  Desative-a na seção abaixo para escolher uma modalidade de
-                  número A.
                 </span>
               </div>
             )}
