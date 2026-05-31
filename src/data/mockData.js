@@ -449,6 +449,99 @@ function gerarSerieCallerId(modoId) {
   return serie
 }
 
+// ===========================================================================
+// 10) QUALIDADE POR CÓDIGO DE ÁREA (DDD de destino) — ASR e ACD
+// ---------------------------------------------------------------------------
+//  Abrir o ASR/ACD por prefixo de destino permite detectar rotas/interconexões
+//  degradadas que ficam escondidas na estatística geral. Algumas áreas abaixo
+//  estão propositalmente com problema para demonstrar o semáforo de alerta:
+//   - 'tecnico'      → ASR muito baixo e ACD curto (corte técnico/contestador)
+//   - 'intermitente' → cai bruscamente HOJE, embora a média de 7 dias seja boa
+// ===========================================================================
+
+const AREAS = [
+  { codigo: '+55 11', pais: 'Brasil', regiao: 'São Paulo',       asrBase: 64, acdBase: 4.8, volBase: 4200 },
+  { codigo: '+55 21', pais: 'Brasil', regiao: 'Rio de Janeiro',  asrBase: 61, acdBase: 4.6, volBase: 2600 },
+  { codigo: '+55 31', pais: 'Brasil', regiao: 'Belo Horizonte',  asrBase: 60, acdBase: 4.5, volBase: 1500, problema: 'intermitente' },
+  { codigo: '+55 41', pais: 'Brasil', regiao: 'Curitiba',        asrBase: 60, acdBase: 4.4, volBase: 1100 },
+  { codigo: '+55 51', pais: 'Brasil', regiao: 'Porto Alegre',    asrBase: 58, acdBase: 4.3, volBase: 980 },
+  { codigo: '+55 61', pais: 'Brasil', regiao: 'Brasília',        asrBase: 57, acdBase: 4.2, volBase: 870 },
+  { codigo: '+55 71', pais: 'Brasil', regiao: 'Salvador',        asrBase: 38, acdBase: 1.3, volBase: 760, problema: 'tecnico' },
+  { codigo: '+55 81', pais: 'Brasil', regiao: 'Recife',          asrBase: 55, acdBase: 4.1, volBase: 720 },
+  { codigo: '+55 85', pais: 'Brasil', regiao: 'Fortaleza',       asrBase: 33, acdBase: 1.5, volBase: 690, problema: 'tecnico' },
+  { codigo: '+55 48', pais: 'Brasil', regiao: 'Florianópolis',   asrBase: 49, acdBase: 3.9, volBase: 540 },
+  { codigo: '+54 11', pais: 'Argentina', regiao: 'Buenos Aires', asrBase: 56, acdBase: 4.0, volBase: 830 },
+  { codigo: '+56 2',  pais: 'Chile',  regiao: 'Santiago',        asrBase: 52, acdBase: 3.8, volBase: 610 },
+]
+
+function ehFimDeSemana(dataISO) {
+  const d = parseISO(dataISO).getDay()
+  return d === 0 || d === 6
+}
+
+// Classifica o ASR em níveis de semáforo.
+function nivelAsr(asr) {
+  if (asr < 40) return 'critico'
+  if (asr < 55) return 'alerta'
+  return 'ok'
+}
+
+// Calcula ASR/ACD de uma área em uma data específica (determinístico).
+function metricasAreaDia(area, dataISO) {
+  const rnd = mulberry32(hashSeed(dataISO + '|' + area.codigo))
+  const fds = ehFimDeSemana(dataISO)
+
+  let asr = clamp(area.asrBase + (rnd() - 0.5) * 12 - (fds ? 4 : 0), 5, 95)
+  let acd = Math.max(area.acdBase + (rnd() - 0.5) * 1.0, 0.3)
+
+  // Problema intermitente: derruba só no dia de HOJE.
+  if (area.problema === 'intermitente' && dataISO === HOJE) {
+    asr = clamp(asr * 0.5, 5, 95)
+    acd = Math.max(acd * 0.45, 0.3)
+  }
+
+  const chamadas = Math.round(area.volBase * (0.85 + rnd() * 0.3))
+  const atendidas = Math.round((chamadas * asr) / 100)
+  return { asr: +asr.toFixed(1), acd: +acd.toFixed(1), chamadas, atendidas }
+}
+
+/**
+ * getQualidadePorArea — qualidade (ASR/ACD) por código de área para uma data,
+ * com série de ASR dos últimos 7 dias e flags de alerta.
+ */
+export function getQualidadePorArea(dataISO = HOJE) {
+  return AREAS.map((area) => {
+    const hoje = metricasAreaDia(area, dataISO)
+
+    // Série de 7 dias (ASR) para sparkline e média de referência.
+    const serie7 = []
+    for (let i = 6; i >= 0; i--) {
+      const dia = addDays(dataISO, -i)
+      serie7.push({ data: dia, asr: metricasAreaDia(area, dia).asr })
+    }
+    const asr7 = +(
+      serie7.reduce((a, p) => a + p.asr, 0) / serie7.length
+    ).toFixed(1)
+
+    // Queda brusca: hoje bem abaixo da própria média de 7 dias.
+    const quedaBrusca = hoje.asr < asr7 - 12
+
+    return {
+      codigo: area.codigo,
+      pais: area.pais,
+      regiao: area.regiao,
+      chamadas: hoje.chamadas,
+      atendidas: hoje.atendidas,
+      asr: hoje.asr,
+      acd: hoje.acd,
+      asr7,
+      serie7,
+      nivel: nivelAsr(hoje.asr),
+      quedaBrusca,
+    }
+  })
+}
+
 /**
  * getEstatisticasCallerId — estatísticas comparativas dos 4 modos.
  * Retorna, por modo: título, ASR médio, ACD médio, total de chamadas (30d)

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   PhoneCall,
   PhoneForwarded,
@@ -12,6 +13,8 @@ import {
   ListChecks,
   RefreshCw,
   Calendar,
+  SignalHigh,
+  ChevronRight,
 } from 'lucide-react'
 
 import Card, { CardHeader, CardBody } from '../components/ui/Card.jsx'
@@ -20,6 +23,7 @@ import KpiCard from '../components/dashboard/KpiCard.jsx'
 import HourlyUsageChart from '../components/dashboard/HourlyUsageChart.jsx'
 import UnansweredChart from '../components/dashboard/UnansweredChart.jsx'
 import RecentCallsTable from '../components/dashboard/RecentCallsTable.jsx'
+import AreaQualityTable from '../components/quality/AreaQualityTable.jsx'
 
 import {
   fetchKpis,
@@ -27,6 +31,7 @@ import {
   fetchNaoAtendidas,
   fetchChamadasRecentes,
   fetchDiasDisponiveis,
+  fetchQualidadePorArea,
 } from '../services/api.js'
 import {
   formatNumero,
@@ -39,6 +44,7 @@ export default function Dashboard() {
   const [usoHora, setUsoHora] = useState([])
   const [naoAtend, setNaoAtend] = useState([])
   const [chamadas, setChamadas] = useState([])
+  const [qualidade, setQualidade] = useState([])
   const [carregando, setCarregando] = useState(true)
 
   // Filtro de data
@@ -48,16 +54,18 @@ export default function Dashboard() {
   async function carregar(data) {
     setCarregando(true)
     // Em produção, isto continuará igual — só muda o que api.js faz por baixo.
-    const [k, u, n, c] = await Promise.all([
+    const [k, u, n, c, q] = await Promise.all([
       fetchKpis(data),
       fetchUsoPorHora(data),
       fetchNaoAtendidas(data),
       fetchChamadasRecentes(data),
+      fetchQualidadePorArea(data),
     ])
     setKpis(k)
     setUsoHora(u)
     setNaoAtend(n)
     setChamadas(c)
+    setQualidade(q)
     setCarregando(false)
   }
 
@@ -221,6 +229,28 @@ export default function Dashboard() {
           </CardBody>
         </Card>
       </div>
+
+      {/* Qualidade por código de área (resumo: piores ASR) */}
+      <Card>
+        <CardHeader
+          title="Qualidade por código de área"
+          subtitle="Destinos com menor ASR — possíveis rotas degradadas"
+          icon={SignalHigh}
+          action={
+            <Link
+              to="/qualidade-area"
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-brand-600 hover:bg-brand-50"
+            >
+              Ver todas
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          }
+        />
+        <AreaQualityTable
+          dados={[...qualidade].sort((a, b) => a.asr - b.asr).slice(0, 6)}
+          compacto
+        />
+      </Card>
 
       {/* Tabela */}
       <Card>

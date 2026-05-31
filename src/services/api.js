@@ -21,6 +21,7 @@ import {
   diasDisponiveis,
   getDadosDia,
   getEstatisticasCallerId,
+  getQualidadePorArea,
   HOJE,
 } from '../data/mockData.js'
 
@@ -74,6 +75,12 @@ export function fetchNaoAtendidas(data = HOJE) {
 export function fetchChamadasRecentes(data = HOJE) {
   // FUTURO: return getJson(`/chamadas/recentes?data=${data}`)
   return mock(getDadosDia(data).chamadasRecentes)
+}
+
+export function fetchQualidadePorArea(data = HOJE) {
+  // Qualidade (ASR/ACD) por código de área de destino.
+  // FUTURO: return getJson(`/dashboard/qualidade-area?data=${data}`)
+  return mock(getQualidadePorArea(data))
 }
 
 export function fetchOperadores() {

@@ -5,11 +5,16 @@ import Sidebar from './components/layout/Sidebar.jsx'
 import Header from './components/layout/Header.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import CallerIdConfig from './pages/CallerIdConfig.jsx'
+import QualityByArea from './pages/QualityByArea.jsx'
 
 const TITULOS = {
   '/': {
     titulo: 'Dashboard de Monitoramento',
     subtitulo: 'Chamadas manuais de saída via PBX',
+  },
+  '/qualidade-area': {
+    titulo: 'Qualidade por Código de Área',
+    subtitulo: 'ASR e ACD por DDD de destino — detecção de rotas degradadas',
   },
   '/caller-id': {
     titulo: 'Configuração de Caller ID',
@@ -36,6 +41,7 @@ export default function App() {
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/qualidade-area" element={<QualityByArea />} />
             <Route path="/caller-id" element={<CallerIdConfig />} />
             <Route path="*" element={<Dashboard />} />
           </Routes>
