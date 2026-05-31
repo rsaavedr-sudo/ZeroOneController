@@ -392,3 +392,83 @@ export function getDadosDia(dataISO) {
   if (!dataISO || dataISO === HOJE) return payloadHoje()
   return gerarDadosDia(dataISO)
 }
+
+// ===========================================================================
+// 9) ESTATÍSTICAS POR OPÇÃO DE CALLER ID (ASR x ACD, histórico de 30 dias)
+// ---------------------------------------------------------------------------
+//  ASR (Answer Seizure Ratio) = % de chamadas atendidas sobre as tentativas.
+//  ACD (Average Call Duration) = duração média da chamada atendida (minutos).
+//
+//  Cada modo de Caller ID tem um "perfil" diferente, para que o cliente possa
+//  comparar qual estratégia de número A rende melhor. Os dados são gerados de
+//  forma determinística (mesma opção → mesma série de 30 dias).
+// ===========================================================================
+
+// Perfil base por modo (valores típicos + amplitude de variação diária).
+const PERFIL_CALLER_ID = {
+  aleatorio_mesma_area: { tituloCurto: 'Aleatório mesma área', asr: 68, asrVar: 6, acd: 5.1, acdVar: 0.6 },
+  fixo_aleatorio:       { tituloCurto: 'Fixo aleatório',       asr: 53, asrVar: 7, acd: 4.2, acdVar: 0.7 },
+  lista_carregada:      { tituloCurto: 'Lista carregada',      asr: 61, asrVar: 6, acd: 4.7, acdVar: 0.6 },
+  manual:               { tituloCurto: 'Manual',               asr: 56, asrVar: 7, acd: 4.4, acdVar: 0.6 },
+}
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v))
+}
+
+// Gera a série de 30 dias (cronológica) para um modo.
+function gerarSerieCallerId(modoId) {
+  const perfil = PERFIL_CALLER_ID[modoId]
+  const rnd = mulberry32(hashSeed('callerid-' + modoId))
+  const ri = (min, max) => Math.floor(min + rnd() * (max - min + 1))
+
+  const serie = []
+  for (let i = 29; i >= 0; i--) {
+    const dataISO = addDays(HOJE, -i)
+    const dt = parseISO(dataISO)
+    const rotulo = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    const fimDeSemana = dt.getDay() === 0 || dt.getDay() === 6
+    // ASR cai um pouco nos fins de semana; ACD sobe levemente.
+    const asr = clamp(
+      perfil.asr + (rnd() - 0.5) * 2 * perfil.asrVar - (fimDeSemana ? 4 : 0),
+      28,
+      94,
+    )
+    const acd = Math.max(
+      perfil.acd + (rnd() - 0.5) * 2 * perfil.acdVar + (fimDeSemana ? 0.2 : 0),
+      1,
+    )
+    serie.push({
+      data: dataISO,
+      rotulo,
+      asr: +asr.toFixed(1),
+      acd: +acd.toFixed(1),
+      chamadas: ri(680, 1320),
+    })
+  }
+  return serie
+}
+
+/**
+ * getEstatisticasCallerId — estatísticas comparativas dos 4 modos.
+ * Retorna, por modo: título, ASR médio, ACD médio, total de chamadas (30d)
+ * e a série diária de 30 dias.
+ */
+export function getEstatisticasCallerId() {
+  return modosCallerId.map((m) => {
+    const serie = gerarSerieCallerId(m.id)
+    const n = serie.length
+    const asrMedio = +(serie.reduce((a, p) => a + p.asr, 0) / n).toFixed(1)
+    const acdMedio = +(serie.reduce((a, p) => a + p.acd, 0) / n).toFixed(1)
+    const chamadas30d = serie.reduce((a, p) => a + p.chamadas, 0)
+    return {
+      modo: m.id,
+      titulo: m.titulo,
+      tituloCurto: PERFIL_CALLER_ID[m.id].tituloCurto,
+      asrMedio,
+      acdMedio,
+      chamadas30d,
+      serie,
+    }
+  })
+}

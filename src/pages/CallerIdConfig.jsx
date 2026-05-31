@@ -17,11 +17,13 @@ import Card, { CardHeader, CardBody } from '../components/ui/Card.jsx'
 import Switch from '../components/ui/Switch.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Spinner from '../components/ui/Spinner.jsx'
+import CallerIdStats from '../components/caller/CallerIdStats.jsx'
 
 import {
   fetchModosCallerId,
   fetchListasCallerId,
   fetchConfigCallerId,
+  fetchEstatisticasCallerId,
   salvarConfigCallerId,
 } from '../services/api.js'
 
@@ -40,20 +42,23 @@ export default function CallerIdConfig() {
   const [modos, setModos] = useState([])
   const [listas, setListas] = useState([])
   const [config, setConfig] = useState(null)
+  const [estatisticas, setEstatisticas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [salvo, setSalvo] = useState(false)
 
   useEffect(() => {
     ;(async () => {
-      const [m, l, c] = await Promise.all([
+      const [m, l, c, e] = await Promise.all([
         fetchModosCallerId(),
         fetchListasCallerId(),
         fetchConfigCallerId(),
+        fetchEstatisticasCallerId(),
       ])
       setModos(m)
       setListas(l)
       setConfig(c)
+      setEstatisticas(e)
       setCarregando(false)
     })()
   }, [])
@@ -89,7 +94,8 @@ export default function CallerIdConfig() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
       {/* Coluna principal */}
       <div className="space-y-6 xl:col-span-2">
         {/* Modos de Caller ID */}
@@ -324,6 +330,12 @@ export default function CallerIdConfig() {
           </CardBody>
         </Card>
       </div>
+      </div>
+
+      {/* Estatísticas comparativas (ASR x ACD) por opção de Caller ID */}
+      {estatisticas.length > 0 && (
+        <CallerIdStats dados={estatisticas} modoAtivo={config.modo} />
+      )}
     </div>
   )
 }

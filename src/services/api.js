@@ -20,6 +20,7 @@ import {
   configCallerIdPadrao,
   diasDisponiveis,
   getDadosDia,
+  getEstatisticasCallerId,
   HOJE,
 } from '../data/mockData.js'
 
@@ -92,6 +93,12 @@ export function fetchListasCallerId() {
 
 export function fetchModosCallerId() {
   return mock(modosCallerId)
+}
+
+export function fetchEstatisticasCallerId() {
+  // Estatísticas comparativas (ASR e ACD) por opção, últimos 30 dias.
+  // FUTURO: return getJson('/caller-id/estatisticas?dias=30')
+  return mock(getEstatisticasCallerId())
 }
 
 export function fetchConfigCallerId() {
