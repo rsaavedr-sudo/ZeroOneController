@@ -104,7 +104,7 @@ export default function AreaQualityTable({
                         {a.codigo}
                       </p>
                       <p className="text-xs text-slate-400">
-                        {a.regiao} · {a.pais}
+                        {a.regiao} · {a.uf || a.pais}
                       </p>
                     </div>
                   </div>

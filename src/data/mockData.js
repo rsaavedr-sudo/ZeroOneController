@@ -459,19 +459,35 @@ function gerarSerieCallerId(modoId) {
 //   - 'intermitente' → cai bruscamente HOJE, embora a média de 7 dias seja boa
 // ===========================================================================
 
+// Capitais de cada estado brasileiro (DDD do destino).
 const AREAS = [
-  { codigo: '+55 11', pais: 'Brasil', regiao: 'São Paulo',       asrBase: 64, acdBase: 4.8, volBase: 4200 },
-  { codigo: '+55 21', pais: 'Brasil', regiao: 'Rio de Janeiro',  asrBase: 61, acdBase: 4.6, volBase: 2600 },
-  { codigo: '+55 31', pais: 'Brasil', regiao: 'Belo Horizonte',  asrBase: 60, acdBase: 4.5, volBase: 1500, problema: 'intermitente' },
-  { codigo: '+55 41', pais: 'Brasil', regiao: 'Curitiba',        asrBase: 60, acdBase: 4.4, volBase: 1100 },
-  { codigo: '+55 51', pais: 'Brasil', regiao: 'Porto Alegre',    asrBase: 58, acdBase: 4.3, volBase: 980 },
-  { codigo: '+55 61', pais: 'Brasil', regiao: 'Brasília',        asrBase: 57, acdBase: 4.2, volBase: 870 },
-  { codigo: '+55 71', pais: 'Brasil', regiao: 'Salvador',        asrBase: 38, acdBase: 1.3, volBase: 760, problema: 'tecnico' },
-  { codigo: '+55 81', pais: 'Brasil', regiao: 'Recife',          asrBase: 55, acdBase: 4.1, volBase: 720 },
-  { codigo: '+55 85', pais: 'Brasil', regiao: 'Fortaleza',       asrBase: 33, acdBase: 1.5, volBase: 690, problema: 'tecnico' },
-  { codigo: '+55 48', pais: 'Brasil', regiao: 'Florianópolis',   asrBase: 49, acdBase: 3.9, volBase: 540 },
-  { codigo: '+54 11', pais: 'Argentina', regiao: 'Buenos Aires', asrBase: 56, acdBase: 4.0, volBase: 830 },
-  { codigo: '+56 2',  pais: 'Chile',  regiao: 'Santiago',        asrBase: 52, acdBase: 3.8, volBase: 610 },
+  { codigo: '+55 11', pais: 'Brasil', uf: 'SP', regiao: 'São Paulo',      asrBase: 64, acdBase: 4.8, volBase: 4200 },
+  { codigo: '+55 21', pais: 'Brasil', uf: 'RJ', regiao: 'Rio de Janeiro', asrBase: 61, acdBase: 4.6, volBase: 2600 },
+  { codigo: '+55 31', pais: 'Brasil', uf: 'MG', regiao: 'Belo Horizonte', asrBase: 60, acdBase: 4.5, volBase: 1500, problema: 'intermitente' },
+  { codigo: '+55 41', pais: 'Brasil', uf: 'PR', regiao: 'Curitiba',       asrBase: 60, acdBase: 4.4, volBase: 1100 },
+  { codigo: '+55 51', pais: 'Brasil', uf: 'RS', regiao: 'Porto Alegre',   asrBase: 58, acdBase: 4.3, volBase: 980 },
+  { codigo: '+55 61', pais: 'Brasil', uf: 'DF', regiao: 'Brasília',       asrBase: 57, acdBase: 4.2, volBase: 870 },
+  { codigo: '+55 71', pais: 'Brasil', uf: 'BA', regiao: 'Salvador',       asrBase: 38, acdBase: 1.3, volBase: 760, problema: 'tecnico' },
+  { codigo: '+55 81', pais: 'Brasil', uf: 'PE', regiao: 'Recife',         asrBase: 55, acdBase: 4.1, volBase: 720 },
+  { codigo: '+55 85', pais: 'Brasil', uf: 'CE', regiao: 'Fortaleza',      asrBase: 33, acdBase: 1.5, volBase: 690, problema: 'tecnico' },
+  { codigo: '+55 62', pais: 'Brasil', uf: 'GO', regiao: 'Goiânia',        asrBase: 58, acdBase: 4.2, volBase: 600 },
+  { codigo: '+55 27', pais: 'Brasil', uf: 'ES', regiao: 'Vitória',        asrBase: 59, acdBase: 4.2, volBase: 520 },
+  { codigo: '+55 92', pais: 'Brasil', uf: 'AM', regiao: 'Manaus',         asrBase: 57, acdBase: 4.1, volBase: 540 },
+  { codigo: '+55 91', pais: 'Brasil', uf: 'PA', regiao: 'Belém',          asrBase: 56, acdBase: 4.0, volBase: 480 },
+  { codigo: '+55 48', pais: 'Brasil', uf: 'SC', regiao: 'Florianópolis',  asrBase: 49, acdBase: 3.9, volBase: 540 },
+  { codigo: '+55 98', pais: 'Brasil', uf: 'MA', regiao: 'São Luís',       asrBase: 55, acdBase: 3.9, volBase: 360 },
+  { codigo: '+55 84', pais: 'Brasil', uf: 'RN', regiao: 'Natal',          asrBase: 55, acdBase: 3.9, volBase: 330 },
+  { codigo: '+55 82', pais: 'Brasil', uf: 'AL', regiao: 'Maceió',         asrBase: 54, acdBase: 3.8, volBase: 340 },
+  { codigo: '+55 83', pais: 'Brasil', uf: 'PB', regiao: 'João Pessoa',    asrBase: 56, acdBase: 3.9, volBase: 300 },
+  { codigo: '+55 86', pais: 'Brasil', uf: 'PI', regiao: 'Teresina',       asrBase: 54, acdBase: 3.8, volBase: 280 },
+  { codigo: '+55 79', pais: 'Brasil', uf: 'SE', regiao: 'Aracaju',        asrBase: 55, acdBase: 3.8, volBase: 260 },
+  { codigo: '+55 65', pais: 'Brasil', uf: 'MT', regiao: 'Cuiabá',         asrBase: 57, acdBase: 4.0, volBase: 290 },
+  { codigo: '+55 67', pais: 'Brasil', uf: 'MS', regiao: 'Campo Grande',   asrBase: 58, acdBase: 4.1, volBase: 300 },
+  { codigo: '+55 69', pais: 'Brasil', uf: 'RO', regiao: 'Porto Velho',    asrBase: 54, acdBase: 3.7, volBase: 200 },
+  { codigo: '+55 95', pais: 'Brasil', uf: 'RR', regiao: 'Boa Vista',      asrBase: 52, acdBase: 3.6, volBase: 150 },
+  { codigo: '+55 96', pais: 'Brasil', uf: 'AP', regiao: 'Macapá',         asrBase: 53, acdBase: 3.7, volBase: 180 },
+  { codigo: '+55 68', pais: 'Brasil', uf: 'AC', regiao: 'Rio Branco',     asrBase: 53, acdBase: 3.6, volBase: 160 },
+  { codigo: '+55 63', pais: 'Brasil', uf: 'TO', regiao: 'Palmas',         asrBase: 55, acdBase: 3.8, volBase: 170 },
 ]
 
 function ehFimDeSemana(dataISO) {
