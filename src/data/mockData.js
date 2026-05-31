@@ -162,6 +162,9 @@ export const configCallerIdPadrao = {
   // true  = chamada sai COM a origem verificada/atestada (rota específica)
   // false = sem atestação de origem; usa a modalidade de número A escolhida
   identificacaoOrigem: false,
+  // Chamada de entrada (recepção de retorno). Disponível apenas para
+  // "Número fixo aleatório" e STIR/SHAKEN, pois exigem um número A estável.
+  chamadaEntradaAtiva: false,
 }
 
 // ===========================================================================
@@ -603,4 +606,98 @@ export function getEstatisticasCallerId() {
       serie,
     }
   })
+}
+
+// ===========================================================================
+// 11) CHAMADAS DE ENTRADA (recepção de retorno)
+// ---------------------------------------------------------------------------
+//  Estatísticas e histórico de chamadas recebidas no número A. Disponível
+//  quando a modalidade é "Número fixo aleatório" ou STIR/SHAKEN.
+// ===========================================================================
+
+const RESULTADOS_ENTRADA = [
+  ['atendida', 0.62],
+  ['perdida', 0.18],
+  ['abandonada', 0.12],
+  ['ocupado', 0.08],
+]
+
+const DDD_MOVEL = ['11', '21', '31', '41', '51', '61', '71', '81', '85', '19']
+
+/**
+ * getChamadasEntrada — pacote de dados de chamadas de entrada de uma data.
+ * Retorna { kpis, porHora, ultimas } (determinístico por data).
+ */
+export function getChamadasEntrada(dataISO = HOJE) {
+  const rnd = mulberry32(hashSeed('entrada|' + dataISO))
+  const ri = (min, max) => Math.floor(min + rnd() * (max - min + 1))
+  const fds = ehFimDeSemana(dataISO)
+
+  // --- KPIs ---
+  const total = ri(180, 420) - (fds ? 60 : 0)
+  const taxa = +(70 + rnd() * 12 - (fds ? 5 : 0)).toFixed(1)
+  const atendidas = Math.round((total * taxa) / 100)
+  const perdidas = total - atendidas
+  const duracaoMedia = +(3.2 + rnd() * 2.6).toFixed(1)
+  const minutos = Math.round(atendidas * duracaoMedia)
+  const esperaMediaSeg = ri(8, 38)
+  const tend = () => +((rnd() - 0.5) * 22).toFixed(1)
+
+  const kpis = {
+    data: dataISO,
+    total,
+    atendidas,
+    perdidas,
+    taxaAtendimento: taxa,
+    duracaoMedia,
+    minutos,
+    esperaMediaSeg,
+    tendencias: {
+      total: tend(),
+      atendidas: tend(),
+      perdidas: tend(),
+      taxaAtendimento: tend(),
+    },
+  }
+
+  // --- Por hora (entrantes x atendidas) ---
+  const horas = ['08h','09h','10h','11h','12h','13h','14h','15h','16h','17h','18h','19h']
+  const curva = [4, 7, 9, 8, 5, 5, 8, 10, 9, 7, 5, 3]
+  const somaCurva = curva.reduce((a, b) => a + b, 0)
+  const porHora = horas.map((hora, idx) => {
+    const jitter = 0.85 + rnd() * 0.3
+    const entrantes = Math.round((total * curva[idx] * jitter) / somaCurva)
+    const atend = Math.round(entrantes * (taxa / 100) * (0.9 + rnd() * 0.2))
+    return { hora, entrantes, atendidas: Math.min(atend, entrantes) }
+  })
+
+  // --- Últimas 50 chamadas recebidas ---
+  let minuto = 18 * 60 + ri(30, 59)
+  const ultimas = Array.from({ length: 50 }, (_, i) => {
+    const hh = String(Math.floor(minuto / 60)).padStart(2, '0')
+    const mm = String(minuto % 60).padStart(2, '0')
+    const ss = String(ri(0, 59)).padStart(2, '0')
+    minuto -= ri(1, 6)
+    if (minuto < 8 * 60) minuto = 8 * 60 + ri(0, 30)
+
+    const resultado = escolherPonderado(rnd, RESULTADOS_ENTRADA)
+    const atendida = resultado === 'atendida'
+    const ddd = DDD_MOVEL[ri(0, DDD_MOVEL.length - 1)]
+    const numeroOrigem = `+55${ddd}9${ri(10000000, 99999999)}`
+    const numeroDestino = POOL_CALLER_IDS[ri(0, POOL_CALLER_IDS.length - 1)]
+    const op = operadores[ri(0, operadores.length - 1)]
+
+    return {
+      id: `e-${dataISO}-${i}`,
+      dataHora: `${dataISO} ${hh}:${mm}:${ss}`,
+      numeroOrigem,
+      numeroDestino,
+      resultado,
+      esperaSeg: resultado === 'ocupado' ? 0 : ri(2, 55),
+      duracaoSeg: atendida ? ri(40, 600) : 0,
+      operador: atendida ? op.nome : '—',
+    }
+  })
+
+  return { kpis, porHora, ultimas }
 }

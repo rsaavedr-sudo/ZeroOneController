@@ -1,9 +1,17 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, PhoneOutgoing, X, Headset, SignalHigh } from 'lucide-react'
+import {
+  LayoutDashboard,
+  PhoneOutgoing,
+  PhoneIncoming,
+  X,
+  Headset,
+  SignalHigh,
+} from 'lucide-react'
 
 const NAV = [
   { to: '/', label: 'Dashboard de Monitoramento', icon: LayoutDashboard, end: true },
   { to: '/qualidade-area', label: 'Qualidade por Área', icon: SignalHigh },
+  { to: '/chamadas-entrada', label: 'Chamadas de Entrada', icon: PhoneIncoming },
   { to: '/caller-id', label: 'Configuração de Caller ID', icon: PhoneOutgoing },
 ]
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   PhoneOutgoing,
+  PhoneIncoming,
   Shuffle,
   Hash,
   ListOrdered,
@@ -62,7 +63,14 @@ export default function CallerIdConfig() {
   const carregando = carregandoConfig || carregandoLocal
 
   function atualizar(patch) {
-    atualizarConfig(patch)
+    // A chamada de entrada só existe para "fixo aleatório" ou STIR/SHAKEN.
+    // Se a nova modalidade não permitir, desliga a entrada automaticamente.
+    const next = { ...config, ...patch }
+    const permiteEntrada =
+      next.identificacaoOrigem || next.modo === 'fixo_aleatorio'
+    atualizarConfig(
+      permiteEntrada ? patch : { ...patch, chamadaEntradaAtiva: false },
+    )
     setSalvo(false)
   }
 
@@ -94,6 +102,9 @@ export default function CallerIdConfig() {
   // Identificação de origem (STIR/SHAKEN) é EXCLUDENTE: quando ativa, a chamada
   // sai por uma rota com origem verificada e a modalidade de número A não se aplica.
   const identifica = config.identificacaoOrigem
+
+  // Chamada de entrada só está disponível para "fixo aleatório" ou STIR/SHAKEN.
+  const permiteEntrada = identifica || config.modo === 'fixo_aleatorio'
 
   return (
     <div className="space-y-6">
@@ -288,6 +299,61 @@ export default function CallerIdConfig() {
             )}
           </CardBody>
         </Card>
+
+        {/* Configuração de chamada de entrada (só para fixo aleatório / STIR) */}
+        {permiteEntrada && (
+          <Card>
+            <CardHeader
+              title="Chamada de entrada"
+              subtitle="Recepção de chamadas de retorno no número A"
+              icon={PhoneIncoming}
+            />
+            <CardBody className="space-y-4">
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 p-4">
+                <div className="flex items-start gap-3">
+                  <span
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                      config.chamadaEntradaAtiva
+                        ? 'bg-brand-50 text-brand-600'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    <PhoneIncoming className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">
+                      {config.chamadaEntradaAtiva
+                        ? 'Chamada de entrada ativada'
+                        : 'Chamada de entrada desativada'}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {config.chamadaEntradaAtiva
+                        ? 'O número A recebe chamadas de retorno. Veja as estatísticas em “Chamadas de Entrada”.'
+                        : 'Ative para receber chamadas de retorno no número A.'}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={config.chamadaEntradaAtiva}
+                  onChange={(v) => atualizar({ chamadaEntradaAtiva: v })}
+                />
+              </div>
+
+              <div className="flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
+                <PhoneIncoming className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <span>
+                  Disponível porque a modalidade ativa é{' '}
+                  <strong>
+                    {identifica
+                      ? 'Identificação de origem (STIR/SHAKEN)'
+                      : 'Número fixo aleatório'}
+                  </strong>
+                  , que mantém um número A estável para receber retornos.
+                </span>
+              </div>
+            </CardBody>
+          </Card>
+        )}
       </div>
 
       {/* Coluna lateral: resumo + salvar */}
@@ -324,6 +390,18 @@ export default function CallerIdConfig() {
                 )
               }
             />
+            {permiteEntrada && (
+              <ResumoItem
+                rotulo="Chamada de entrada"
+                valor={
+                  config.chamadaEntradaAtiva ? (
+                    <Badge variant="blue">Ativada</Badge>
+                  ) : (
+                    <Badge variant="slate">Desativada</Badge>
+                  )
+                }
+              />
+            )}
 
             <button
               onClick={handleSalvar}

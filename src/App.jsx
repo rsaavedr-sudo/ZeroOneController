@@ -6,6 +6,7 @@ import Header from './components/layout/Header.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import CallerIdConfig from './pages/CallerIdConfig.jsx'
 import QualityByArea from './pages/QualityByArea.jsx'
+import InboundCalls from './pages/InboundCalls.jsx'
 import { CallerIdProvider } from './context/CallerIdContext.jsx'
 
 const TITULOS = {
@@ -16,6 +17,10 @@ const TITULOS = {
   '/qualidade-area': {
     titulo: 'Qualidade por Código de Área',
     subtitulo: 'ASR e ACD por DDD de destino — detecção de rotas degradadas',
+  },
+  '/chamadas-entrada': {
+    titulo: 'Chamadas de Entrada',
+    subtitulo: 'Recepção de chamadas de retorno no número A',
   },
   '/caller-id': {
     titulo: 'Configuração de Caller ID',
@@ -44,6 +49,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/qualidade-area" element={<QualityByArea />} />
+            <Route path="/chamadas-entrada" element={<InboundCalls />} />
             <Route path="/caller-id" element={<CallerIdConfig />} />
             <Route path="*" element={<Dashboard />} />
           </Routes>

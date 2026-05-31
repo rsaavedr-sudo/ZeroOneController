@@ -22,6 +22,7 @@ import {
   getDadosDia,
   getEstatisticasCallerId,
   getQualidadePorArea,
+  getChamadasEntrada,
   HOJE,
 } from '../data/mockData.js'
 
@@ -81,6 +82,12 @@ export function fetchQualidadePorArea(data = HOJE) {
   // Qualidade (ASR/ACD) por código de área de destino.
   // FUTURO: return getJson(`/dashboard/qualidade-area?data=${data}`)
   return mock(getQualidadePorArea(data))
+}
+
+export function fetchChamadasEntrada(data = HOJE) {
+  // Chamadas de entrada (recepção): KPIs, por hora e últimas 50.
+  // FUTURO: return getJson(`/chamadas/entrada?data=${data}`)
+  return mock(getChamadasEntrada(data))
 }
 
 export function fetchOperadores() {
