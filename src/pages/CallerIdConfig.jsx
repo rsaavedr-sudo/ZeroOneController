@@ -20,12 +20,11 @@ import Spinner from '../components/ui/Spinner.jsx'
 import CallerIdStats from '../components/caller/CallerIdStats.jsx'
 
 import {
-  fetchModosCallerId,
   fetchListasCallerId,
-  fetchConfigCallerId,
   fetchEstatisticasCallerId,
   salvarConfigCallerId,
 } from '../services/api.js'
+import { useCallerId } from '../context/CallerIdContext.jsx'
 
 // Ícone por modo
 const ICONES_MODO = {
@@ -39,32 +38,32 @@ const ICONES_MODO = {
 const E164 = /^\+[1-9]\d{7,14}$/
 
 export default function CallerIdConfig() {
-  const [modos, setModos] = useState([])
+  // Config e modos vêm do contexto global (compartilhado com o Dashboard).
+  const { config, atualizarConfig, modos, carregando: carregandoConfig } =
+    useCallerId()
+
   const [listas, setListas] = useState([])
-  const [config, setConfig] = useState(null)
   const [estatisticas, setEstatisticas] = useState([])
-  const [carregando, setCarregando] = useState(true)
+  const [carregandoLocal, setCarregandoLocal] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [salvo, setSalvo] = useState(false)
 
   useEffect(() => {
     ;(async () => {
-      const [m, l, c, e] = await Promise.all([
-        fetchModosCallerId(),
+      const [l, e] = await Promise.all([
         fetchListasCallerId(),
-        fetchConfigCallerId(),
         fetchEstatisticasCallerId(),
       ])
-      setModos(m)
       setListas(l)
-      setConfig(c)
       setEstatisticas(e)
-      setCarregando(false)
+      setCarregandoLocal(false)
     })()
   }, [])
 
+  const carregando = carregandoConfig || carregandoLocal
+
   function atualizar(patch) {
-    setConfig((prev) => ({ ...prev, ...patch }))
+    atualizarConfig(patch)
     setSalvo(false)
   }
 
@@ -93,6 +92,9 @@ export default function CallerIdConfig() {
     return <Spinner label="Carregando configuração de Caller ID..." />
   }
 
+  // Chamada anônima é EXCLUDENTE: desativa a escolha de modalidade de número A.
+  const anonima = config.ocultarOrigem
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -106,6 +108,24 @@ export default function CallerIdConfig() {
             icon={PhoneOutgoing}
           />
           <CardBody className="space-y-3">
+            {anonima && (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                <EyeOff className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  Opções desativadas: a <strong>chamada anônima</strong> está
+                  ativa (rota sem identificação de origem). Desative-a na seção
+                  abaixo para escolher uma modalidade de número A.
+                </span>
+              </div>
+            )}
+            <div
+              className={
+                anonima
+                  ? 'pointer-events-none select-none space-y-3 opacity-50'
+                  : 'space-y-3'
+              }
+              aria-disabled={anonima}
+            >
             {modos.map((m) => {
               const Icon = ICONES_MODO[m.id] || Hash
               const ativo = config.modo === m.id
@@ -123,6 +143,7 @@ export default function CallerIdConfig() {
                       name="modo-caller-id"
                       value={m.id}
                       checked={ativo}
+                      disabled={anonima}
                       onChange={() => atualizar({ modo: m.id })}
                       className="mt-1 h-4 w-4 accent-brand-600"
                     />
@@ -220,6 +241,7 @@ export default function CallerIdConfig() {
                 </div>
               )
             })}
+            </div>
           </CardBody>
         </Card>
 
@@ -285,12 +307,18 @@ export default function CallerIdConfig() {
           <CardBody className="space-y-4">
             <ResumoItem
               rotulo="Modo do número A"
-              valor={modos.find((m) => m.id === config.modo)?.titulo}
+              valor={
+                anonima ? (
+                  <span className="text-slate-400">Não se aplica</span>
+                ) : (
+                  modos.find((m) => m.id === config.modo)?.titulo
+                )
+              }
             />
-            {config.modo === 'lista_carregada' && (
+            {!anonima && config.modo === 'lista_carregada' && (
               <ResumoItem rotulo="Lista" valor={listaSelecionada?.nome} />
             )}
-            {config.modo === 'manual' && (
+            {!anonima && config.modo === 'manual' && (
               <ResumoItem
                 rotulo="Números válidos"
                 valor={`${validacaoManual.validos.length} número(s)`}

@@ -6,6 +6,7 @@ import Header from './components/layout/Header.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import CallerIdConfig from './pages/CallerIdConfig.jsx'
 import QualityByArea from './pages/QualityByArea.jsx'
+import { CallerIdProvider } from './context/CallerIdContext.jsx'
 
 const TITULOS = {
   '/': {
@@ -28,6 +29,7 @@ export default function App() {
   const meta = TITULOS[location.pathname] || TITULOS['/']
 
   return (
+    <CallerIdProvider>
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
@@ -48,5 +50,6 @@ export default function App() {
         </main>
       </div>
     </div>
+    </CallerIdProvider>
   )
 }

@@ -15,6 +15,9 @@ import {
   Calendar,
   SignalHigh,
   ChevronRight,
+  PhoneOutgoing,
+  EyeOff,
+  Settings2,
 } from 'lucide-react'
 
 import Card, { CardHeader, CardBody } from '../components/ui/Card.jsx'
@@ -33,6 +36,7 @@ import {
   fetchDiasDisponiveis,
   fetchQualidadePorArea,
 } from '../services/api.js'
+import { useCallerId, descreverModalidade } from '../context/CallerIdContext.jsx'
 import {
   formatNumero,
   formatPercent,
@@ -46,6 +50,10 @@ export default function Dashboard() {
   const [chamadas, setChamadas] = useState([])
   const [qualidade, setQualidade] = useState([])
   const [carregando, setCarregando] = useState(true)
+
+  // Modalidade de Caller ID em operação (contexto global)
+  const { config, modos } = useCallerId()
+  const modalidade = descreverModalidade(config, modos)
 
   // Filtro de data
   const [dias, setDias] = useState([])
@@ -143,6 +151,51 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Sinalização: modalidade de número A (Caller ID) em operação */}
+      <div
+        className={`flex flex-wrap items-center gap-3 rounded-2xl border p-4 ${
+          modalidade.anonima
+            ? 'border-amber-200 bg-amber-50'
+            : 'border-brand-200 bg-brand-50/60'
+        }`}
+      >
+        <span
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+            modalidade.anonima
+              ? 'bg-amber-100 text-amber-600'
+              : 'bg-brand-600 text-white'
+          }`}
+        >
+          {modalidade.anonima ? (
+            <EyeOff className="h-5 w-5" />
+          ) : (
+            <PhoneOutgoing className="h-5 w-5" />
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p
+            className={`text-[11px] font-semibold uppercase tracking-wider ${
+              modalidade.anonima ? 'text-amber-600' : 'text-brand-600'
+            }`}
+          >
+            Modalidade de número A (Caller ID) em operação
+          </p>
+          <p className="truncate text-base font-bold text-slate-800">
+            {modalidade.label}
+          </p>
+          {modalidade.detalhe && (
+            <p className="truncate text-xs text-slate-500">{modalidade.detalhe}</p>
+          )}
+        </div>
+        <Link
+          to="/caller-id"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm hover:bg-slate-50"
+        >
+          <Settings2 className="h-4 w-4" />
+          <span className="hidden sm:inline">Configurar</span>
+        </Link>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
@@ -230,11 +283,11 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Qualidade por código de área (resumo: piores ASR) */}
+      {/* Qualidade por código de área — capitais de estado (ordem de DDD) */}
       <Card>
         <CardHeader
           title="Qualidade por código de área"
-          subtitle="Destinos com menor ASR — possíveis rotas degradadas"
+          subtitle="Capitais de estado por DDD — ASR, ACD e alertas de rota"
           icon={SignalHigh}
           action={
             <Link
@@ -247,7 +300,9 @@ export default function Dashboard() {
           }
         />
         <AreaQualityTable
-          dados={[...qualidade].sort((a, b) => a.asr - b.asr).slice(0, 6)}
+          dados={[...qualidade]
+            .filter((a) => a.capital)
+            .sort((a, b) => a.codigo.localeCompare(b.codigo))}
           compacto
         />
       </Card>

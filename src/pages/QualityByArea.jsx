@@ -18,6 +18,7 @@ export default function QualityByArea() {
   const [dias, setDias] = useState([])
   const [diaSelecionado, setDiaSelecionado] = useState(null)
   const [carregando, setCarregando] = useState(true)
+  const [filtro, setFiltro] = useState('todas') // todas | capitais | outras
 
   async function carregar(data) {
     setCarregando(true)
@@ -42,13 +43,19 @@ export default function QualityByArea() {
     carregar(data)
   }
 
+  const dadosFiltrados = useMemo(() => {
+    if (filtro === 'capitais') return dados.filter((d) => d.capital)
+    if (filtro === 'outras') return dados.filter((d) => !d.capital)
+    return dados
+  }, [dados, filtro])
+
   const resumo = useMemo(() => {
-    const criticos = dados.filter((d) => d.nivel === 'critico').length
-    const alertas = dados.filter((d) => d.nivel === 'alerta').length
-    const ok = dados.filter((d) => d.nivel === 'ok').length
-    const quedas = dados.filter((d) => d.quedaBrusca).length
+    const criticos = dadosFiltrados.filter((d) => d.nivel === 'critico').length
+    const alertas = dadosFiltrados.filter((d) => d.nivel === 'alerta').length
+    const ok = dadosFiltrados.filter((d) => d.nivel === 'ok').length
+    const quedas = dadosFiltrados.filter((d) => d.quedaBrusca).length
     return { criticos, alertas, ok, quedas }
-  }, [dados])
+  }, [dadosFiltrados])
 
   const labelDia = dias.find((d) => d.valor === diaSelecionado)?.label || ''
 
@@ -60,7 +67,27 @@ export default function QualityByArea() {
           Qualidade por código de área (DDD de destino) ·{' '}
           <span className="font-medium text-slate-700">{labelDia}</span>
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Filtro capitais / outras */}
+          <div className="inline-flex rounded-xl border border-slate-200 bg-white p-0.5 shadow-sm">
+            {[
+              { id: 'todas', label: 'Todas' },
+              { id: 'capitais', label: 'Capitais' },
+              { id: 'outras', label: 'Outras' },
+            ].map((op) => (
+              <button
+                key={op.id}
+                onClick={() => setFiltro(op.id)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  filtro === op.id
+                    ? 'bg-brand-600 text-white'
+                    : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {op.label}
+              </button>
+            ))}
+          </div>
           <div className="relative">
             <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <select
@@ -140,7 +167,7 @@ export default function QualityByArea() {
               subtitle="Clique nos títulos para ordenar"
               icon={SignalHigh}
             />
-            <AreaQualityTable dados={dados} ordenavel mostrarSparkline />
+            <AreaQualityTable dados={dadosFiltrados} ordenavel mostrarSparkline />
           </Card>
         </>
       )}
