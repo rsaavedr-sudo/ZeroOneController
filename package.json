@@ -1,9 +1,35 @@
 {
   "name": "zero2one-call-controller",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.8.0",
   "type": "module",
-  "description": "Maqueta frontend para monitoramento de chamadas manuais de call center (dados mock)",
+  "description": "CallerController — plataforma de monitoramento e operação inteligente de chamadas manuais de saída para contact centers.",
+  "keywords": [
+    "contact-center",
+    "call-center",
+    "caller-id",
+    "ani",
+    "stir-shaken",
+    "asr",
+    "acd",
+    "whatsapp",
+    "dashboard",
+    "react",
+    "vite"
+  ],
+  "author": "Zero2One",
+  "license": "UNLICENSED",
+  "homepage": "https://github.com/rsaavedr-sudo/ZeroOneController#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rsaavedr-sudo/ZeroOneController.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rsaavedr-sudo/ZeroOneController/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -14,8 +14,10 @@ import {
   RefreshCw,
   Calendar,
   PhoneOutgoing,
+  MessageCircle,
   ShieldCheck,
   Settings2,
+  ChevronRight,
 } from 'lucide-react'
 
 import Card, { CardHeader, CardBody } from '../components/ui/Card.jsx'
@@ -31,8 +33,10 @@ import {
   fetchNaoAtendidas,
   fetchChamadasRecentes,
   fetchDiasDisponiveis,
+  fetchCanalWhatsapp,
 } from '../services/api.js'
 import { useCallerId, descreverModalidade } from '../context/CallerIdContext.jsx'
+import Badge from '../components/ui/Badge.jsx'
 import {
   formatNumero,
   formatPercent,
@@ -49,10 +53,26 @@ export default function Dashboard() {
   // Modalidade de Caller ID em operação (contexto global)
   const { config, modos } = useCallerId()
   const modalidade = descreverModalidade(config, modos)
+  const entradaAtiva = !!config?.chamadaEntradaAtiva
+  const whatsAtivo = !!config?.canalWhatsappAtivo
 
   // Filtro de data
   const [dias, setDias] = useState([])
   const [diaSelecionado, setDiaSelecionado] = useState(null)
+
+  // Resumo do canal WhatsApp (só quando ativo)
+  const [whats, setWhats] = useState(null)
+  useEffect(() => {
+    let vivo = true
+    if (whatsAtivo && diaSelecionado) {
+      fetchCanalWhatsapp(diaSelecionado).then((d) => vivo && setWhats(d))
+    } else {
+      setWhats(null)
+    }
+    return () => {
+      vivo = false
+    }
+  }, [whatsAtivo, diaSelecionado])
 
   async function carregar(data) {
     setCarregando(true)
@@ -179,6 +199,25 @@ export default function Dashboard() {
           {modalidade.detalhe && (
             <p className="truncate text-xs text-slate-500">{modalidade.detalhe}</p>
           )}
+          {/* Recursos complementares ativos */}
+          {(entradaAtiva || whatsAtivo) && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {entradaAtiva && (
+                <Link to="/chamadas-entrada">
+                  <Badge variant="blue" className="hover:ring-2 hover:ring-brand-200">
+                    <PhoneIncoming className="h-3 w-3" /> Chamada de entrada
+                  </Badge>
+                </Link>
+              )}
+              {whatsAtivo && (
+                <Link to="/canal-whatsapp">
+                  <Badge variant="green" className="hover:ring-2 hover:ring-emerald-200">
+                    <MessageCircle className="h-3 w-3" /> Canal WhatsApp
+                  </Badge>
+                </Link>
+              )}
+            </div>
+          )}
         </div>
         <Link
           to="/caller-id"
@@ -188,6 +227,40 @@ export default function Dashboard() {
           <span className="hidden sm:inline">Configurar</span>
         </Link>
       </div>
+
+      {/* Estatística básica do Canal WhatsApp (quando ativo) */}
+      {whatsAtivo && whats && (
+        <Card className="p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <MessageCircle className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-800">
+                  Canal WhatsApp
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Engajamento dos contatos no número A
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/canal-whatsapp"
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
+            >
+              Ver detalhes
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <MiniStat rotulo="Contatos discados" valor={formatNumero(whats.kpis.totalContatos)} />
+            <MiniStat rotulo="Acionaram o WhatsApp" valor={formatNumero(whats.kpis.acionaram)} destaque />
+            <MiniStat rotulo="Taxa de engajamento" valor={formatPercent(whats.kpis.taxaEngajamento)} destaque />
+            <MiniStat rotulo="Mensagens trocadas" valor={formatNumero(whats.kpis.mensagens)} />
+          </div>
+        </Card>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -285,6 +358,21 @@ export default function Dashboard() {
         />
         <RecentCallsTable data={chamadas} />
       </Card>
+    </div>
+  )
+}
+
+function MiniStat({ rotulo, valor, destaque = false }) {
+  return (
+    <div className="rounded-xl bg-slate-50 px-4 py-3">
+      <p className="text-xs text-slate-500">{rotulo}</p>
+      <p
+        className={`mt-1 text-xl font-bold ${
+          destaque ? 'text-emerald-600' : 'text-slate-900'
+        }`}
+      >
+        {valor}
+      </p>
     </div>
   )
 }
