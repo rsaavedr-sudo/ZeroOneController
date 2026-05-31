@@ -23,6 +23,7 @@ import {
   getEstatisticasCallerId,
   getQualidadePorArea,
   getChamadasEntrada,
+  getCanalWhatsapp,
   HOJE,
 } from '../data/mockData.js'
 
@@ -88,6 +89,12 @@ export function fetchChamadasEntrada(data = HOJE) {
   // Chamadas de entrada (recepção): KPIs, por hora e últimas 50.
   // FUTURO: return getJson(`/chamadas/entrada?data=${data}`)
   return mock(getChamadasEntrada(data))
+}
+
+export function fetchCanalWhatsapp(data = HOJE) {
+  // Engajamento no canal WhatsApp: KPIs, distribuição, por hora e conversas.
+  // FUTURO: return getJson(`/canal-whatsapp?data=${data}`)
+  return mock(getCanalWhatsapp(data))
 }
 
 export function fetchOperadores() {

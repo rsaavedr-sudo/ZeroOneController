@@ -165,6 +165,8 @@ export const configCallerIdPadrao = {
   // Chamada de entrada (recepção de retorno). Disponível apenas para
   // "Número fixo aleatório" e STIR/SHAKEN, pois exigem um número A estável.
   chamadaEntradaAtiva: false,
+  // Canal WhatsApp associado ao número A. Disponível apenas para STIR/SHAKEN.
+  canalWhatsappAtivo: false,
 }
 
 // ===========================================================================
@@ -700,4 +702,101 @@ export function getChamadasEntrada(dataISO = HOJE) {
   })
 
   return { kpis, porHora, ultimas }
+}
+
+// ===========================================================================
+// 12) CANAL WHATSAPP (engajamento associado ao número A)
+// ---------------------------------------------------------------------------
+//  Quando ativo (somente com STIR/SHAKEN), dá visibilidade dos contatos que
+//  acionaram o WhatsApp do número A após a chamada — comparando quem acionou
+//  vs. quem não acionou.
+// ===========================================================================
+
+const STATUS_WHATS = [
+  ['respondido', 0.55],
+  ['aguardando', 0.27],
+  ['encerrado', 0.18],
+]
+
+export function getCanalWhatsapp(dataISO = HOJE) {
+  const rnd = mulberry32(hashSeed('whatsapp|' + dataISO))
+  const ri = (min, max) => Math.floor(min + rnd() * (max - min + 1))
+  const fds = ehFimDeSemana(dataISO)
+
+  // --- KPIs ---
+  const totalContatos = ri(420, 900) // contatos discados que poderiam acionar
+  const taxa = +(18 + rnd() * 20 - (fds ? 3 : 0)).toFixed(1) // 18%–38%
+  const acionaram = Math.round((totalContatos * taxa) / 100)
+  const naoAcionaram = totalContatos - acionaram
+  const mensagens = acionaram * ri(2, 8)
+  const conversasAtivas = Math.round(acionaram * (0.15 + rnd() * 0.15))
+  const tempoMedioPrimeiroContatoMin = ri(3, 75)
+  const tend = () => +((rnd() - 0.5) * 22).toFixed(1)
+
+  const kpis = {
+    data: dataISO,
+    totalContatos,
+    acionaram,
+    naoAcionaram,
+    taxaEngajamento: taxa,
+    mensagens,
+    conversasAtivas,
+    tempoMedioPrimeiroContatoMin,
+    tendencias: {
+      acionaram: tend(),
+      taxaEngajamento: tend(),
+      mensagens: tend(),
+    },
+  }
+
+  // --- Distribuição acionaram x não acionaram ---
+  const distribuicao = [
+    { tipo: 'Acionaram WhatsApp', valor: acionaram, cor: '#22c55e' },
+    { tipo: 'Não acionaram', valor: naoAcionaram, cor: '#cbd5e1' },
+  ]
+
+  // --- Acionamentos por hora ---
+  const horas = ['08h','09h','10h','11h','12h','13h','14h','15h','16h','17h','18h','19h']
+  const curva = [3, 5, 8, 9, 7, 6, 8, 10, 9, 8, 6, 4]
+  const somaCurva = curva.reduce((a, b) => a + b, 0)
+  const porHora = horas.map((hora, idx) => {
+    const jitter = 0.85 + rnd() * 0.3
+    return {
+      hora,
+      acionamentos: Math.round((acionaram * curva[idx] * jitter) / somaCurva),
+    }
+  })
+
+  // --- Últimas conversas (30) ---
+  let minuto = 18 * 60 + ri(30, 59)
+  const usados = new Set()
+  const conversas = Array.from({ length: 30 }, (_, i) => {
+    const hh = String(Math.floor(minuto / 60)).padStart(2, '0')
+    const mm = String(minuto % 60).padStart(2, '0')
+    minuto -= ri(2, 10)
+    if (minuto < 8 * 60) minuto = 8 * 60 + ri(0, 30)
+
+    let cli
+    do {
+      cli = POOL_CLIENTES[ri(0, POOL_CLIENTES.length - 1)]
+    } while (usados.has(cli) && usados.size < POOL_CLIENTES.length)
+    usados.add(cli)
+
+    const ddd = DDD_MOVEL[ri(0, DDD_MOVEL.length - 1)]
+    const numeroOrigem = `+55${ddd}9${ri(10000000, 99999999)}`
+    const numeroA = POOL_CALLER_IDS[ri(0, POOL_CALLER_IDS.length - 1)]
+    const status = escolherPonderado(rnd, STATUS_WHATS)
+
+    return {
+      id: `w-${dataISO}-${i}`,
+      dataHora: `${dataISO} ${hh}:${mm}:00`,
+      contato: cli,
+      numeroOrigem,
+      numeroA,
+      mensagens: ri(1, 14),
+      status,
+    }
+  })
+
+  return { kpis, distribuicao, porHora, conversas }
 }

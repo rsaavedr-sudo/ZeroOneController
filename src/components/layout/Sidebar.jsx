@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   PhoneOutgoing,
   PhoneIncoming,
+  MessageCircle,
   X,
   Headset,
   SignalHigh,
@@ -12,6 +13,7 @@ const NAV = [
   { to: '/', label: 'Dashboard de Monitoramento', icon: LayoutDashboard, end: true },
   { to: '/qualidade-area', label: 'Qualidade por Área', icon: SignalHigh },
   { to: '/chamadas-entrada', label: 'Chamadas de Entrada', icon: PhoneIncoming },
+  { to: '/canal-whatsapp', label: 'Canal WhatsApp', icon: MessageCircle },
   { to: '/caller-id', label: 'Configuração de Caller ID', icon: PhoneOutgoing },
 ]
 

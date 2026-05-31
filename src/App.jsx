@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import CallerIdConfig from './pages/CallerIdConfig.jsx'
 import QualityByArea from './pages/QualityByArea.jsx'
 import InboundCalls from './pages/InboundCalls.jsx'
+import WhatsAppChannel from './pages/WhatsAppChannel.jsx'
 import { CallerIdProvider } from './context/CallerIdContext.jsx'
 
 const TITULOS = {
@@ -21,6 +22,10 @@ const TITULOS = {
   '/chamadas-entrada': {
     titulo: 'Chamadas de Entrada',
     subtitulo: 'Recepção de chamadas de retorno no número A',
+  },
+  '/canal-whatsapp': {
+    titulo: 'Canal WhatsApp',
+    subtitulo: 'Engajamento dos contatos no WhatsApp do número A',
   },
   '/caller-id': {
     titulo: 'Configuração de Caller ID',
@@ -50,6 +55,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/qualidade-area" element={<QualityByArea />} />
             <Route path="/chamadas-entrada" element={<InboundCalls />} />
+            <Route path="/canal-whatsapp" element={<WhatsAppChannel />} />
             <Route path="/caller-id" element={<CallerIdConfig />} />
             <Route path="*" element={<Dashboard />} />
           </Routes>

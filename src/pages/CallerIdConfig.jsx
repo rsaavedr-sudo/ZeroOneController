@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   PhoneOutgoing,
   PhoneIncoming,
+  MessageCircle,
   Shuffle,
   Hash,
   ListOrdered,
@@ -63,14 +64,18 @@ export default function CallerIdConfig() {
   const carregando = carregandoConfig || carregandoLocal
 
   function atualizar(patch) {
-    // A chamada de entrada só existe para "fixo aleatório" ou STIR/SHAKEN.
-    // Se a nova modalidade não permitir, desliga a entrada automaticamente.
+    // Recursos condicionais:
+    //  - Chamada de entrada → "fixo aleatório" ou STIR/SHAKEN
+    //  - Canal WhatsApp     → somente STIR/SHAKEN
+    // Se a nova modalidade não permitir, o recurso é desligado automaticamente.
     const next = { ...config, ...patch }
     const permiteEntrada =
       next.identificacaoOrigem || next.modo === 'fixo_aleatorio'
-    atualizarConfig(
-      permiteEntrada ? patch : { ...patch, chamadaEntradaAtiva: false },
-    )
+    const permiteWhats = next.identificacaoOrigem
+    const fix = { ...patch }
+    if (!permiteEntrada) fix.chamadaEntradaAtiva = false
+    if (!permiteWhats) fix.canalWhatsappAtivo = false
+    atualizarConfig(fix)
     setSalvo(false)
   }
 
@@ -354,6 +359,57 @@ export default function CallerIdConfig() {
             </CardBody>
           </Card>
         )}
+
+        {/* Canal WhatsApp (só para STIR/SHAKEN) */}
+        {identifica && (
+          <Card>
+            <CardHeader
+              title="Canal WhatsApp"
+              subtitle="Visibilidade do engajamento no WhatsApp do número A"
+              icon={MessageCircle}
+            />
+            <CardBody className="space-y-4">
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 p-4">
+                <div className="flex items-start gap-3">
+                  <span
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                      config.canalWhatsappAtivo
+                        ? 'bg-emerald-50 text-emerald-600'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">
+                      {config.canalWhatsappAtivo
+                        ? 'Canal WhatsApp ativado'
+                        : 'Canal WhatsApp desativado'}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {config.canalWhatsappAtivo
+                        ? 'Acompanhe quem acionou o WhatsApp do número A em “Canal WhatsApp”.'
+                        : 'Ative para ter visibilidade dos contatos que acionam o WhatsApp do número A.'}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={config.canalWhatsappAtivo}
+                  onChange={(v) => atualizar({ canalWhatsappAtivo: v })}
+                />
+              </div>
+
+              <div className="flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
+                <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <span>
+                  Disponível apenas com a{' '}
+                  <strong>identificação de origem (STIR/SHAKEN)</strong>, que
+                  vincula um número A verificado ao WhatsApp.
+                </span>
+              </div>
+            </CardBody>
+          </Card>
+        )}
       </div>
 
       {/* Coluna lateral: resumo + salvar */}
@@ -398,6 +454,18 @@ export default function CallerIdConfig() {
                     <Badge variant="blue">Ativada</Badge>
                   ) : (
                     <Badge variant="slate">Desativada</Badge>
+                  )
+                }
+              />
+            )}
+            {identifica && (
+              <ResumoItem
+                rotulo="Canal WhatsApp"
+                valor={
+                  config.canalWhatsappAtivo ? (
+                    <Badge variant="green">Ativado</Badge>
+                  ) : (
+                    <Badge variant="slate">Desativado</Badge>
                   )
                 }
               />
