@@ -13,8 +13,6 @@ import {
   ListChecks,
   RefreshCw,
   Calendar,
-  SignalHigh,
-  ChevronRight,
   PhoneOutgoing,
   ShieldCheck,
   Settings2,
@@ -26,7 +24,6 @@ import KpiCard from '../components/dashboard/KpiCard.jsx'
 import HourlyUsageChart from '../components/dashboard/HourlyUsageChart.jsx'
 import UnansweredChart from '../components/dashboard/UnansweredChart.jsx'
 import RecentCallsTable from '../components/dashboard/RecentCallsTable.jsx'
-import AreaQualityTable from '../components/quality/AreaQualityTable.jsx'
 
 import {
   fetchKpis,
@@ -34,7 +31,6 @@ import {
   fetchNaoAtendidas,
   fetchChamadasRecentes,
   fetchDiasDisponiveis,
-  fetchQualidadePorArea,
 } from '../services/api.js'
 import { useCallerId, descreverModalidade } from '../context/CallerIdContext.jsx'
 import {
@@ -48,7 +44,6 @@ export default function Dashboard() {
   const [usoHora, setUsoHora] = useState([])
   const [naoAtend, setNaoAtend] = useState([])
   const [chamadas, setChamadas] = useState([])
-  const [qualidade, setQualidade] = useState([])
   const [carregando, setCarregando] = useState(true)
 
   // Modalidade de Caller ID em operação (contexto global)
@@ -62,18 +57,16 @@ export default function Dashboard() {
   async function carregar(data) {
     setCarregando(true)
     // Em produção, isto continuará igual — só muda o que api.js faz por baixo.
-    const [k, u, n, c, q] = await Promise.all([
+    const [k, u, n, c] = await Promise.all([
       fetchKpis(data),
       fetchUsoPorHora(data),
       fetchNaoAtendidas(data),
       fetchChamadasRecentes(data),
-      fetchQualidadePorArea(data),
     ])
     setKpis(k)
     setUsoHora(u)
     setNaoAtend(n)
     setChamadas(c)
-    setQualidade(q)
     setCarregando(false)
   }
 
@@ -282,30 +275,6 @@ export default function Dashboard() {
           </CardBody>
         </Card>
       </div>
-
-      {/* Qualidade por código de área — capitais de estado (ordem de DDD) */}
-      <Card>
-        <CardHeader
-          title="Qualidade por código de área"
-          subtitle="Capitais de estado por DDD — ASR, ACD e alertas de rota"
-          icon={SignalHigh}
-          action={
-            <Link
-              to="/qualidade-area"
-              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-brand-600 hover:bg-brand-50"
-            >
-              Ver todas
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          }
-        />
-        <AreaQualityTable
-          dados={[...qualidade]
-            .filter((a) => a.capital)
-            .sort((a, b) => a.codigo.localeCompare(b.codigo))}
-          compacto
-        />
-      </Card>
 
       {/* Tabela */}
       <Card>
