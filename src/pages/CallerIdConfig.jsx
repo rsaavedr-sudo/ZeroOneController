@@ -107,77 +107,27 @@ export default function CallerIdConfig() {
             subtitle="Escolha como o Caller ID será definido (opções mutuamente exclusivas)"
             icon={PhoneOutgoing}
           />
-          <CardBody className="space-y-4">
-            {/* Switch de acionamento (excludente com STIR/SHAKEN) */}
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 p-4">
-              <div className="flex items-start gap-3">
-                <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                    !identifica
-                      ? 'bg-brand-50 text-brand-600'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}
-                >
-                  <PhoneOutgoing className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {!identifica
-                      ? 'Configuração de Caller ID ativada'
-                      : 'Configuração de Caller ID desativada'}
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    {!identifica
-                      ? 'Escolha abaixo a modalidade de número A das chamadas.'
-                      : 'Ative para definir a modalidade de número A. Exclusivo com a identificação de origem (STIR/SHAKEN).'}
-                  </p>
-                </div>
-              </div>
-              <Switch
-                checked={!identifica}
-                onChange={(v) => atualizar({ identificacaoOrigem: !v })}
-              />
-            </div>
-
-            {identifica && (
-              <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  Modalidade desativada: a{' '}
-                  <strong>identificação de origem (STIR/SHAKEN)</strong> está
-                  ativa. A chamada sai por uma rota com origem verificada.
-                </span>
-              </div>
-            )}
-            <div
-              className={
-                identifica
-                  ? 'pointer-events-none select-none space-y-3 opacity-50'
-                  : 'space-y-3'
-              }
-              aria-disabled={identifica}
-            >
+          <CardBody className="space-y-3">
+            <p className="text-xs text-slate-400">
+              Cada modalidade é uma opção independente e excludente. Ao ativar
+              uma, as demais — e a identificação de origem (STIR/SHAKEN) — são
+              desativadas.
+            </p>
             {modos.map((m) => {
               const Icon = ICONES_MODO[m.id] || Hash
-              const ativo = config.modo === m.id
+              const ativo = !identifica && config.modo === m.id
+              const ativar = () =>
+                atualizar({ modo: m.id, identificacaoOrigem: false })
               return (
                 <div key={m.id}>
-                  <label
+                  <div
+                    onClick={ativar}
                     className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${
                       ativo
                         ? 'border-brand-300 bg-brand-50/60 ring-1 ring-brand-200'
                         : 'border-slate-200 hover:bg-slate-50'
                     }`}
                   >
-                    <input
-                      type="radio"
-                      name="modo-caller-id"
-                      value={m.id}
-                      checked={ativo}
-                      disabled={identifica}
-                      onChange={() => atualizar({ modo: m.id })}
-                      className="mt-1 h-4 w-4 accent-brand-600"
-                    />
                     <span
                       className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
                         ativo ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'
@@ -193,7 +143,8 @@ export default function CallerIdConfig() {
                         {m.descricao}
                       </span>
                     </span>
-                  </label>
+                    <Switch checked={ativo} onChange={ativar} />
+                  </div>
 
                   {/* Painel: Lista de números carregados */}
                   {ativo && m.id === 'lista_carregada' && (
@@ -272,7 +223,6 @@ export default function CallerIdConfig() {
                 </div>
               )
             })}
-            </div>
           </CardBody>
         </Card>
 
